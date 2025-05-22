@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to Industry 4.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Application Structure Plan: The SPA is structured with a fixed top navigation bar for easy access to key thematic sections. Each section is a full-width content block.
+        1. Hero: Brief introduction.
+        2. What is Industry 4.0?: Definition, historical context (interactive timeline).
+        3. Guiding Principles: Interactive cards for the four principles.
+        4. Core Technologies: A grid of clickable cards, each revealing detailed information about a specific technology.
+        5. Software Ecosystem: A visual representation of software layers and types, with clickable elements for details.
+        6. Impact & Value: Sub-sections for Benefits and Challenges, using cards and a chart for key stats.
+        7. Ethical Dimensions: Sections covering employment, data privacy/bias, and equitable access.
+        8. Real-World Examples: An interactive display of case studies with key metrics.
+        9. Conclusion & Future: Summarizing the report's outlook, now including LLM-powered interactive features for Q&A and scenario generation.
+        This structure was chosen to break down the dense report into manageable, thematically organized segments, facilitating user exploration and understanding. Interactions like click-to-reveal and an interactive timeline enhance engagement. New LLM features provide dynamic, personalized insights.
+    -->
+    <!-- Visualization & Content Choices:
+        - Historical Revolutions: Report Info: Details of 4 industrial revolutions. Goal: Inform evolution. Viz/Presentation: Interactive HTML/CSS timeline. Interaction: Click on revolution name to show details. Justification: Clear chronological display, interactive engagement. Library/Method: Tailwind CSS, JS.
+        - Foundational Principles: Report Info: Interconnection, Info Transparency, Tech Assistance, Decentralized Decisions. Goal: Organize & Inform. Viz/Presentation: Interactive Cards (HTML/CSS). Interaction: Click to expand/reveal details. Justification: Digestible presentation of key concepts. Library/Method: Tailwind CSS, JS.
+        - Core Technologies/Software: Report Info: Descriptions of each. Goal: Detailed exploration. Viz/Presentation: Grid of clickable cards revealing content. Interaction: Click to show/hide details. Justification: Manages large info blocks. Library/Method: Tailwind CSS, JS.
+        - Cybersecurity Ransomware Stat: Report Info: 65% of manufacturers victim to ransomware. Goal: Highlight risk. Viz/Presentation: Donut Chart. Interaction: Static display. Justification: Visual impact for key statistic. Library/Method: Chart.js.
+        - Case Study Metrics: Report Info: BJC 23% stock reduction, Bosch >10% output, DHL 50% cycle time / 2x productivity, IBM 5x efficiency / 20% false positive reduction. Goal: Show tangible benefits. Viz/Presentation: Key stat callouts within case study cards. Interaction: Displayed in card details. Justification: Quantifies impact. Library/Method: HTML/CSS.
+        - Industry 4.0 Value ($3.7T): Report Info: Projected value. Goal: Emphasize economic scale. Viz/Presentation: Prominent key stat. Interaction: Static. Justification: Highlights major projection. Library/Method: HTML/CSS.
+        - General Text: Report Info: Summaries, explanations. Goal: Inform. Viz/Presentation: Formatted text, accordions/expandable sections. Interaction: Click to expand/collapse. Justification: Readability, information hierarchy. Library/Method: HTML/CSS, JS.
+        - Ask Gemini about Industry 4.0: Report Info: User questions. Goal: Provide dynamic answers. Viz/Presentation: Text input, button, text output area. Interaction: User types, clicks button, LLM generates text. Justification: Direct Q&A, personalized learning. Library/Method: Gemini API (gemini-2.0-flash), JS.
+        - Smart Factory Scenario Generator: Report Info: User-defined industry. Goal: Generate contextual scenarios. Viz/Presentation: Text input, button, text output area. Interaction: User types, clicks button, LLM generates text. Justification: Creative application of Industry 4.0 concepts, enhances understanding by example. Library/Method: Gemini API (gemini-2.0-flash), JS.
+    -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .nav-link { cursor: pointer; }
+        .chart-container { position: relative; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; height: 300px; max-height: 350px; }
+        .technology-card, .principle-card, .benefit-card, .challenge-card, .case-study-card, .software-card, .ethical-card {
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .technology-card:hover, .principle-card:hover, .benefit-card:hover, .challenge-card:hover, .case-study-card:hover, .software-card:hover, .ethical-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .details.open {
+            max-height: 2000px; /* Adjust as needed */
+        }
+        .timeline-item .timeline-content {
+            display: none;
+        }
+        .timeline-item.active .timeline-content {
+            display: block;
+        }
+        /* Ensure light background for the entire page */
+        html, body { background-color: #FFFAF0; /* amber-50 equivalent */ }
+    </style>
+</head>
+<body class="bg-amber-50 text-neutral-800">
+
+    <header class="bg-neutral-100 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-teal-700">Industry 4.0 Explorer</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a onclick="showSection('intro')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Intro</a>
+                        <a onclick="showSection('principles')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Principles</a>
+                        <a onclick="showSection('technologies')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Technologies</a>
+                        <a onclick="showSection('software')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Software</a>
+                        <a onclick="showSection('impact')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Impact</a>
+                        <a onclick="showSection('ethics')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Ethics</a>
+                        <a onclick="showSection('cases')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Case Studies</a>
+                        <a onclick="showSection('conclusion')" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Conclusion</a>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-neutral-200 inline-flex items-center justify-center p-2 rounded-md text-neutral-600 hover:text-neutral-800 hover:bg-neutral-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-500" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a onclick="showSection('intro'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Intro</a>
+                <a onclick="showSection('principles'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Principles</a>
+                <a onclick="showSection('technologies'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Technologies</a>
+                <a onclick="showSection('software'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Software</a>
+                <a onclick="showSection('impact'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Impact</a>
+                <a onclick="showSection('ethics'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Ethics</a>
+                <a onclick="showSection('cases'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Case Studies</a>
+                <a onclick="showSection('conclusion'); toggleMobileMenu();" class="nav-link text-neutral-700 hover:bg-teal-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Conclusion</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <section id="intro" class="content-section active">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8 mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-teal-700 mb-4">Welcome to the Industry 4.0 Explorer</h1>
+                <p class="text-lg text-neutral-700 mb-6">
+                    Industry 4.0, or the Fourth Industrial Revolution, marks a significant transformation in manufacturing and industrial processes. It's about creating "smart factories" where digital technologies enable real-time decision-making, enhanced productivity, and unprecedented flexibility. This guide will walk you through its core concepts, technologies, impact, and implications.
+                </p>
+                <div class="bg-teal-50 border-l-4 border-teal-500 p-4 rounded-md">
+                    <p class="text-neutral-700">
+                        This interactive application is designed to help you explore the multifaceted world of Industry 4.0. Navigate through the sections using the menu above to delve into its definition, guiding principles, the technologies that drive it, the essential software, its benefits and challenges, ethical considerations, real-world examples, and its future outlook.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl font-semibold text-neutral-700 mb-4">What is Industry 4.0?</h2>
+                <p class="text-neutral-600 mb-4">
+                    Industry 4.0 signifies a paradigm shift, embodying the digital transformation of the industrial landscape. It facilitates real-time decision-making, boosts productivity, and introduces unprecedented levels of flexibility and agility. It's characterized by the blurring of boundaries between the physical, digital, and biological worlds through technology integration.
+                </p>
+                <h3 class="text-xl font-semibold text-neutral-700 my-4">The Journey of Industrial Revolutions: An Interactive Timeline</h3>
+                <p class="text-neutral-600 mb-4">
+                    To understand Industry 4.0, it's helpful to see its place in history. Click on each revolution below to learn more about its key characteristics and contributions to industrial advancement. This interactive timeline helps visualize the progression that has led us to the current era of smart manufacturing.
+                </p>
+                <div class="space-y-6">
+                    <div class="timeline-item bg-neutral-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                        <h4 class="text-lg font-semibold text-teal-600 cursor-pointer" onclick="toggleTimelineItem(this.parentElement)">First Industrial Revolution (Mid-18th C - c. 1830) 🚂</h4>
+                        <div class="timeline-content mt-2 text-neutral-600">
+                            <p>Driven by coal, steam power, and mechanization of production, primarily in Great Britain. Key innovations included the steam engine and textile machinery, shifting from manual labor to machine-based manufacturing.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item bg-neutral-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                        <h4 class="text-lg font-semibold text-teal-600 cursor-pointer" onclick="toggleTimelineItem(this.parentElement)">Second Industrial Revolution (Mid-19th C - Early 20th C) 💡</h4>
+                        <div class="timeline-content mt-2 text-neutral-600">
+                            <p>Marked by electricity, gas, oil, the combustion engine, and mass production assembly lines. Innovations like steel and chemical-based products transformed industries and daily life.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item bg-neutral-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                        <h4 class="text-lg font-semibold text-teal-600 cursor-pointer" onclick="toggleTimelineItem(this.parentElement)">Third Industrial Revolution (Mid-20th C - "Digital Revolution") 💻</h4>
+                        <div class="timeline-content mt-2 text-neutral-600">
+                            <p>Defined by computers, electronics, and internet-based communications. Programmable Logic Controllers (PLCs) digitized factories, enhancing automation with data collection and analysis capabilities.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item bg-neutral-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                        <h4 class="text-lg font-semibold text-teal-600 cursor-pointer" onclick="toggleTimelineItem(this.parentElement)">Fourth Industrial Revolution (Industry 4.0 - Present) 🌐</h4>
+                        <div class="timeline-content mt-2 text-neutral-600">
+                            <p>Characterized by cyber-physical systems, IoT, AI, and real-time data. It emphasizes decentralized decision-making and intelligent, self-optimizing systems, moving beyond automation to smart, interconnected operations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="principles" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Foundational Principles of Industry 4.0</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    The success of Industry 4.0 is built upon four key principles. These principles guide the integration of technologies and processes to create truly smart and efficient industrial environments. Click on each principle to explore its meaning and significance in the context of digital transformation.
+                </p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="principle-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🔗 Interconnection (Interoperability)</h3>
+                        <p class="text-neutral-600 short-desc">Seamless machine-to-machine and machine-to-person communication.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>This is the bedrock, enabling devices, machines, sensors, and people to connect and communicate. The Internet of Things (IoT) is a primary enabler, allowing data collection and access via centralized databases. True interoperability requires open APIs for meaningful data sharing across diverse systems.</p>
+                        </div>
+                    </div>
+                    <div class="principle-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">📊 Information Transparency</h3>
+                        <p class="text-neutral-600 short-desc">Creating a virtual copy of the physical world through sensor data.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>IoT enables vast data collection at every production stage, providing unprecedented visibility into problems and inefficiencies. This aggregated information allows operators to understand and optimize processes. Data can even be collected post-sale for product optimization.</p>
+                        </div>
+                    </div>
+                    <div class="principle-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🤝 Technical Assistance</h3>
+                        <p class="text-neutral-600 short-desc">Systems supporting humans in decision-making and problem-solving.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Technology assists humans by aggregating and visualizing information for better decisions and by performing tasks that are unsafe or unpleasant. Machine learning helps analyze data faster than humans. AR and cloud simulations allow proactive problem identification. Robotics assist in hazardous conditions.</p>
+                        </div>
+                    </div>
+                    <div class="principle-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🤖 Decentralized Decisions</h3>
+                        <p class="text-neutral-600 short-desc">Cyber-physical systems making autonomous decisions.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Empowering cyber-physical systems to make simple, routine decisions autonomously. AI-powered machines can recognize patterns and react to data like a human operator would, freeing humans for complex situations. Human intervention is reserved for exceptions or conflicting goals.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="technologies" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Core Technologies Driving Industry 4.0</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    Industry 4.0 is powered by a convergence of advanced technologies. These technologies work in synergy to create intelligent, interconnected, and automated manufacturing environments. Explore the cards below to understand the role and impact of each core technology.
+                </p>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🌉 Cyber-Physical Systems (CPS) & IIoT</h3>
+                        <p class="text-neutral-600 short-desc">Integrating physical systems with their cyber counterparts.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>CPS monitor physical processes, create virtual replicas, and make decentralized decisions. The Industrial Internet of Things (IIoT) is a network of interconnected devices exchanging data, crucial for smart factories and predictive maintenance. Real-time data collection transforms operational responsiveness.</p>
+                        </div>
+                    </div>
+                    <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🧠 Artificial Intelligence (AI) & Machine Learning (ML)</h3>
+                        <p class="text-neutral-600 short-desc">Enabling machines to learn, decide, and solve problems.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>AI and ML empower machines to learn from data without explicit programming. They convert vast raw data into actionable insights, intelligent automation, and predictive analysis, enhancing efficiency and quality control. They are the intelligence layer making "smart manufacturing" functional.</p>
+                        </div>
+                    </div>
+                    <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🦾 Robotics & Advanced Automation</h3>
+                        <p class="text-neutral-600 short-desc">Automating complex and repetitive tasks.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Robots automate tasks, operate continuously, and enhance productivity. Modern robots are flexible, programmable, and can collaborate with humans (Cobots) or navigate autonomously (AMRs). They improve safety by handling hazardous tasks. Industry 4.0 robotics are adaptive, enabling mass customization.</p>
+                        </div>
+                    </div>
+                    <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">☁️ Cloud Computing & Edge Computing</h3>
+                        <p class="text-neutral-600 short-desc">Providing scalable and responsive infrastructure.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Cloud computing offers scalable data storage and computing power. Edge computing processes data locally at the source for real-time decisions and reduced latency. A hybrid approach is often optimal, balancing speed, cost, and security.</p>
+                        </div>
+                    </div>
+                    <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🌐 Digital Twins & Simulation</h3>
+                        <p class="text-neutral-600 short-desc">Virtual replicas of real-world objects or systems.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Digital twins are dynamic virtual models fed by real-time IoT data. They allow simulation and testing of processes, performance monitoring, and workflow refinement. This proactive problem-solving reduces risks and costs, fostering continuous improvement.</p>
+                        </div>
+                    </div>
+                    <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🖨️ Additive Manufacturing (3D Printing)</h3>
+                        <p class="text-neutral-600 short-desc">Building objects layer by layer from digital models.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Enables complex geometries, simplified production, rapid prototyping, mass customization, and local production of parts. It reduces waste and supports decentralized, on-demand manufacturing, enhancing supply chain resilience.</p>
+                        </div>
+                    </div>
+                     <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">📡 Smart Sensors & Advanced HMIs</h3>
+                        <p class="text-neutral-600 short-desc">Generating data and bridging human-machine interaction.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Smart sensors collect real-time data for IIoT networks and predictive maintenance. Advanced Human-Machine Interfaces (HMIs) provide intuitive ways for operators to monitor and control systems, using touchscreens, GUIs, and even AR/VR for immersive interaction and training.</p>
+                        </div>
+                    </div>
+                     <div class="technology-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">📈 Big Data & Advanced Analytics</h3>
+                        <p class="text-neutral-600 short-desc">Extracting value from vast datasets.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Industry 4.0 generates huge data volumes. Big Data and Advanced Analytics collect, process, and analyze this data to provide actionable intelligence. Machine learning diagnoses root causes, optimizes processes, and guides decisions, enabling proactive and predictive operations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="software" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Essential Software Ecosystem</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    Industry 4.0 relies on a sophisticated, interconnected software ecosystem that bridges enterprise planning with shop-floor operations. This ecosystem is crucial for creating a holistic smart manufacturing environment. Click on the software categories below to learn about their roles and integrations.
+                </p>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="software-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🏭 MES & MOM Systems</h3>
+                        <p class="text-neutral-600 short-desc">Linking ERP to factory floor operations.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Manufacturing Execution Systems (MES) and Manufacturing Operations Management (MOM) provide real-time coordination. MES handles real-time data collection, tracking, traceability, and optimization. MOM has a broader scope, integrating supply chain and logistics. They are the central nervous system of a smart factory.</p>
+                        </div>
+                    </div>
+                    <div class="software-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">📊 ERP & PLM Integration</h3>
+                        <p class="text-neutral-600 short-desc">Core business process and product lifecycle management.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Enterprise Resource Planning (ERP) manages core business processes (finance, HR, supply chain). Product Lifecycle Management (PLM) manages a product's entire lifecycle. Their integration with MES/MOM creates a "digital thread" from strategic planning and design to execution.</p>
+                        </div>
+                    </div>
+                    <div class="software-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🖥️ SCADA Systems</h3>
+                        <p class="text-neutral-600 short-desc">Monitoring and controlling industrial processes.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Supervisory Control and Data Acquisition (SCADA) systems collect, process, and visualize real-time data from equipment, integrating with HMIs and feeding data to MES. Their integration with IT systems highlights IT-OT convergence.</p>
+                        </div>
+                    </div>
+                    <div class="software-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">☁️ Cloud & IIoT Platforms</h3>
+                        <p class="text-neutral-600 short-desc">Scalable infrastructure and industrial device connectivity.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Cloud platforms (e.g., Azure, Google Cloud) offer scalable resources. Industrial IoT (IIoT) platforms (e.g., Shoplogix, Evocon) connect devices, manage sensor data, and enable smart manufacturing applications, often cloud-based, lowering entry barriers.</p>
+                        </div>
+                    </div>
+                    <div class="software-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">💡 Data Analytics, BI & AI/ML Software</h3>
+                        <p class="text-neutral-600 short-desc">Extracting value from data for insights and automation.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Analytics and Business Intelligence (BI) tools process and visualize data. AI/ML software enables autonomous learning, prediction, and decision-making, moving beyond descriptive to predictive and prescriptive analytics, even enabling autonomous action.</p>
+                        </div>
+                    </div>
+                    <div class="software-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🛠️ Design, Simulation & Automation Software</h3>
+                        <p class="text-neutral-600 short-desc">CAD/CAM/CAE and robot programming.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>CAD (design), CAM (manufacturing prep), CAE (engineering analysis) facilitate a connected design-to-make environment. Robot programming software allows offline programming and simulation of complex tasks. This integrated suite accelerates product development and production.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-8 p-6 bg-teal-50 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold text-teal-700 mb-3">MES/MOM Integration Layers</h3>
+                    <p class="text-neutral-600 mb-4">MES/MOM systems are central, integrating vertically across different layers of the industrial architecture:</p>
+                    <ul class="space-y-3 text-neutral-600">
+                        <li><strong>Enterprise Layer (Top):</strong> ERP (work orders, BOMs), PLM (product designs), QMS (quality).</li>
+                        <li><strong>MES Platform Layer (Middleware):</strong> Core operations, translating enterprise instructions to shop floor tasks and consolidating execution data.</li>
+                        <li><strong>Control Layer (Bottom):</strong> PLCs, SCADA, HMIs, IoT sensors, barcode/RFID readers, facilitating direct data collection and machine control.</li>
+                    </ul>
+                    <p class="mt-3 text-neutral-600">This intricate integration forms the "digital thread," enabling real-time visibility and intelligent decision-making.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Impact & Value Proposition of Industry 4.0</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    Adopting Industry 4.0 technologies brings transformative benefits but also presents significant challenges. This section explores both the value proposition and the hurdles organizations face in their digital transformation journey.
+                </p>
+
+                <h3 class="text-xl sm:text-2xl font-semibold text-teal-700 mb-4">Key Benefits</h3>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="benefit-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-teal-600 mb-2">🚀 Enhanced Productivity & Efficiency</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Automation reduces labor costs and errors. Optimized resource usage (materials, energy) lowers operational costs. Robots enable faster production and higher output. Data-driven optimization boosts overall productivity and growth.</p>
+                        </div>
+                    </div>
+                    <div class="benefit-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-teal-600 mb-2">⭐ Improved Quality & Customization</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>AI enhances quality control by identifying defects. Automated systems prevent quality deviations. Enables mass customization ("batch-of-one") and rapid adaptation to customer needs and market demands.</p>
+                        </div>
+                    </div>
+                    <div class="benefit-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-teal-600 mb-2">🔧 Predictive Maintenance & Minimized Downtime</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>IoT sensors monitor equipment health. IIoT, Big Data, and ML predict failures before they occur, allowing scheduled repairs and preventing costly unscheduled downtime. Transforms maintenance into a strategic tool for asset optimization.</p>
+                        </div>
+                    </div>
+                    <div class="benefit-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-teal-600 mb-2">🔗 Optimized Supply Chain & Inventory</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Real-time tracking (RFID) provides visibility into stock levels and supplier performance. Data interchange improves coordination and demand forecasting. Analytics optimize inventory, supporting JIT production and enhancing supply chain resilience.</p>
+                        </div>
+                    </div>
+                    <div class="benefit-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-teal-600 mb-2">🛡️ Increased Flexibility, Agility & Safety</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Rapidly adapt production lines and reconfigure processes. Robots automate hazardous tasks, improving workplace safety. IoT monitors environmental factors and worker safety, fostering a human-centric approach.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl sm:text-2xl font-semibold text-red-600 mb-4">Challenges and Risks</h3>
+                 <div class="grid md:grid-cols-2 gap-6">
+                    <div class="challenge-card bg-red-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-red-700 mb-2">🔌 Technological Integration & Interoperability</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Integrating new tech with legacy systems is hard. Lack of open standards limits data sharing. Data siloing hinders decision-making. Requires unified platform strategy and clear architectural vision.</p>
+                        </div>
+                    </div>
+                    <div class="challenge-card bg-red-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-red-700 mb-2">💻 Cybersecurity Threats & Data Vulnerabilities</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Increased connectivity expands attack surface (IT-OT convergence). Threats include ransomware, malware. Fragmented security responsibility is common. Requires integrated cybersecurity from the outset.</p>
+                            <div class="mt-4">
+                                <p class="text-sm text-neutral-700 font-semibold">Ransomware Impact (2024):</p>
+                                <div class="chart-container mx-auto mt-2" style="max-width: 250px; height: 250px;">
+                                    <canvas id="ransomwareChart"></canvas>
+                                </div>
+                                <p class="text-xs text-center text-neutral-500 mt-1">65% of manufacturers were victims of ransomware.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="challenge-card bg-red-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-red-700 mb-2">👥 Workforce Skills Gap & Change Management</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Requires new, specialized skills. Difficulty finding/training employees. Potential job displacement due to automation. Resistance to cultural shift. Needs investment in training and change management.</p>
+                        </div>
+                    </div>
+                    <div class="challenge-card bg-red-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h4 class="text-lg font-semibold text-red-700 mb-2">💰 High Initial Investment & ROI Justification</h4>
+                        <div class="details mt-2 text-neutral-600">
+                            <p>Significant upfront capital for tech and implementation. Ongoing maintenance costs. Difficulty demonstrating short-term ROI. Projected value of $3.7 trillion by 2025, but requires robust financial models and phased implementation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="ethics" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Ethical and Societal Implications</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    Industry 4.0 introduces complex ethical and moral dilemmas that society must proactively address. These range from the future of work to data privacy and equitable access to technology's benefits. Understanding these implications is crucial for responsible development and deployment.
+                </p>
+                <div class="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="ethical-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">👨‍💼 Impact on Employment & Future of Work</h3>
+                        <p class="text-neutral-600 short-desc">Automation, job displacement, and new skill demands.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Automation may displace jobs, especially repetitive ones. New roles will emerge requiring specialized skills, necessitating education and retraining. Ethical considerations include ensuring a "just transition" for workers and addressing potential decreases in human interaction at work. Proposals like Universal Basic Income (UBI) are debated.</p>
+                        </div>
+                    </div>
+                    <div class="ethical-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🔒 Data Privacy, Ownership & Algorithmic Bias</h3>
+                        <p class="text-neutral-600 short-desc">Surveillance, data rights, and fairness in AI decisions.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>Vast data collection raises surveillance ("Big Brother") concerns and questions about data ownership. Misuse of sensitive data has severe ramifications. AI decisions based on biased data can lead to discriminatory outcomes. Transparency in algorithms and ethical AI frameworks are essential.</p>
+                        </div>
+                    </div>
+                    <div class="ethical-card bg-neutral-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-xl font-semibold text-teal-700 mb-2">🌍 Ensuring Equitable Access to Technology</h3>
+                        <p class="text-neutral-600 short-desc">Bridging the digital divide for shared benefits.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p>The "digital divide" is a key concern. Benefits of Industry 4.0 must be accessible to all to prevent worsening social inequalities. Governments, businesses, and educational institutions must collaborate to provide training and resources to underserved communities. Equitable access is a strategic imperative for societal stability.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="cases" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Real-World Applications & Case Studies</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    Industry 4.0 is not just theoretical; it's delivering tangible results across various sectors. These case studies illustrate how core technologies and software are being leveraged to solve real-world problems and achieve significant improvements. Click each case to see the details.
+                </p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="case-study-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-lg font-semibold text-teal-700 mb-2">BJC HealthCare: IoT for Inventory</h3>
+                        <p class="text-neutral-600 short-desc">Reduced onsite medical supply stock by 23% using RFID.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p><strong>Problem:</strong> Labor-intensive inventory tracking.</p>
+                            <p><strong>Solution:</strong> RFID tagging for medical supplies.</p>
+                            <p><strong>Result:</strong> 23% reduction in onsite stock, significant labor savings.</p>
+                            <p><strong>Key Tech:</strong> IoT (RFID).</p>
+                        </div>
+                    </div>
+                    <div class="case-study-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-lg font-semibold text-teal-700 mb-2">Bosch Automotive (China): Big Data for Efficiency</h3>
+                        <p class="text-neutral-600 short-desc">Increased production output >10% with predictive maintenance.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p><strong>Problem:</strong> Production bottlenecks.</p>
+                            <p><strong>Solution:</strong> Machine sensor data collection, ML analytics for predictive maintenance.</p>
+                            <p><strong>Result:</strong> >10% increase in production output in specific areas, higher uptime.</p>
+                            <p><strong>Key Tech:</strong> Big Data, AI/ML, IIoT.</p>
+                        </div>
+                    </div>
+                    <div class="case-study-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-lg font-semibold text-teal-700 mb-2">Fetch Robotics & DHL: Robotics in Warehouses</h3>
+                        <p class="text-neutral-600 short-desc">Reduced order cycle time by up to 50%, 2x picking productivity.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p><strong>Problem:</strong> Inefficient inventory movement.</p>
+                            <p><strong>Solution:</strong> Collaborative Autonomous Mobile Robots (AMRs) for picking/placing.</p>
+                            <p><strong>Result:</strong> Order cycle time reduced up to 50%, up to 2x gain in picking productivity.</p>
+                            <p><strong>Key Tech:</strong> Robotics (AMRs), AI/ML.</p>
+                        </div>
+                    </div>
+                    <div class="case-study-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-lg font-semibold text-teal-700 mb-2">Siemens & Team Penske: Digital Twins for Development</h3>
+                        <p class="text-neutral-600 short-desc">Accelerated race car development, reduced testing costs.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p><strong>Problem:</strong> Slow race car development process.</p>
+                            <p><strong>Solution:</strong> Digital twin of race car using real-time sensor data for virtual testing.</p>
+                            <p><strong>Result:</strong> Reduced testing costs and time, faster vehicle development.</p>
+                            <p><strong>Key Tech:</strong> Digital Twins, IoT, Simulation.</p>
+                        </div>
+                    </div>
+                    <div class="case-study-card bg-teal-50 p-6 rounded-lg shadow-lg" onclick="toggleDetails(this)">
+                        <h3 class="text-lg font-semibold text-teal-700 mb-2">IBM Manufacturing: AI for Visual Inspection</h3>
+                        <p class="text-neutral-600 short-desc">Achieved up to 5x efficiency gains, 20% fewer false positives.</p>
+                        <div class="details mt-4 text-neutral-600">
+                            <p><strong>Problem:</strong> Manual inspection errors, high false positives in automated inspection.</p>
+                            <p><strong>Solution:</strong> AI-powered computer vision (Maximo Visual Inspection) for defect detection.</p>
+                            <p><strong>Result:</strong> Up to 5x efficiency gains, 20% reduction in false positives.</p>
+                            <p><strong>Key Tech:</strong> AI/ML (Computer Vision).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="content-section">
+            <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">Conclusion and Future Outlook</h2>
+                <p class="text-neutral-600 mb-4">
+                    Industry 4.0 is a profound, ongoing transformation, reshaping manufacturing by merging physical and digital worlds. It's more than a tech upgrade; it's a fundamental shift in how industries operate, innovate, and create value. Core technologies like CPS, IIoT, AI/ML, robotics, additive manufacturing, and digital twins, supported by a sophisticated software ecosystem (MES/MOM, ERP, PLM, Cloud), drive unprecedented automation, real-time data processing, and predictive capabilities.
+                </p>
+                <p class="text-neutral-600 mb-4">
+                    The benefits are compelling: enhanced productivity, cost reduction, superior quality, mass customization, agile supply chains, and safer workplaces. The shift to proactive, data-driven decision-making is a hallmark of this era.
+                </p>
+                <p class="text-neutral-600 mb-4">
+                    However, challenges are significant: technological integration, cybersecurity threats, workforce skills gaps, organizational change, and ethical dilemmas (data privacy, job displacement, equitable access).
+                </p>
+                <p class="text-neutral-600 font-semibold text-teal-700">
+                    The future points to deeper integration of emerging technologies, with human-machine collaboration becoming central. Navigating this revolution requires ongoing adaptation, strategic investment in technology and human capital, and a commitment to addressing challenges and ethical implications responsibly. Embracing Industry 4.0 is a strategic imperative for competitiveness and innovation.
+                </p>
+
+                <hr class="my-8 border-neutral-200">
+
+                <h2 class="text-2xl sm:text-3xl font-bold text-neutral-700 mb-6 text-center">✨ Explore with Gemini AI ✨</h2>
+                <p class="text-neutral-600 mb-8 text-center max-w-2xl mx-auto">
+                    Leverage the power of AI to gain deeper insights into Industry 4.0 or generate imaginative scenarios.
+                </p>
+
+                <div class="bg-teal-50 p-6 rounded-lg shadow-lg mb-8">
+                    <h3 class="text-xl font-semibold text-teal-700 mb-4">Ask Gemini about Industry 4.0</h3>
+                    <p class="text-neutral-600 mb-4">
+                        Have a specific question about Industry 4.0? Type it below and let Gemini provide an insightful answer.
+                    </p>
+                    <textarea id="geminiQuestionInput" class="w-full p-3 rounded-md border border-neutral-300 focus:ring-teal-500 focus:border-teal-500 mb-4 h-24 resize-y" placeholder="e.g., What is the role of 5G in Industry 4.0?"></textarea>
+                    <button id="askGeminiButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition-colors flex items-center justify-center">
+                        <span class="mr-2">✨ Ask Gemini</span>
+                        <span id="askGeminiSpinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                    </button>
+                    <div id="geminiAnswerOutput" class="mt-4 p-4 bg-white rounded-md border border-neutral-200 text-neutral-700 hidden"></div>
+                    <div id="geminiError" class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md hidden"></div>
+                </div>
+
+                <div class="bg-teal-50 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold text-teal-700 mb-4">Smart Factory Scenario Generator</h3>
+                    <p class="text-neutral-600 mb-4">
+                        Imagine a smart factory in a specific industry. Describe the industry or type of factory, and Gemini will generate a short scenario illustrating Industry 4.0 in action.
+                    </p>
+                    <input type="text" id="scenarioIndustryInput" class="w-full p-3 rounded-md border border-neutral-300 focus:ring-teal-500 focus:border-teal-500 mb-4" placeholder="e.g., Automotive assembly plant, Pharmaceutical manufacturing, Food processing facility">
+                    <button id="generateScenarioButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition-colors flex items-center justify-center">
+                        <span class="mr-2">✨ Generate Scenario</span>
+                        <span id="scenarioSpinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                    </button>
+                    <div id="scenarioOutput" class="mt-4 p-4 bg-white rounded-md border border-neutral-200 text-neutral-700 hidden"></div>
+                    <div id="scenarioError" class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md hidden"></div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-neutral-100 mt-12 py-8 text-center">
+        <p class="text-neutral-600 text-sm">&copy; 2024 Industry 4.0 Interactive Guide. Information based on the provided report.</p>
+    </footer>
+
+    <script>
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            window.scrollTo(0, 0); // Scroll to top when section changes
+        }
+
+        function toggleDetails(element) {
+            const details = element.querySelector('.details');
+            if (details) {
+                details.classList.toggle('open');
+            }
+        }
+
+        function toggleTimelineItem(element) {
+            // Close other active timeline items
+            document.querySelectorAll('.timeline-item.active').forEach(item => {
+                if (item !== element) {
+                    item.classList.remove('active');
+                    item.querySelector('.timeline-content').style.display = 'none';
+                }
+            });
+            // Toggle current item
+            element.classList.toggle('active');
+            const content = element.querySelector('.timeline-content');
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial section
+            showSection('intro');
+
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(mobileMenuButton && mobileMenu){
+                mobileMenuButton.addEventListener('click', () => {
+                    const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true' || false;
+                    mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                    mobileMenuButton.querySelectorAll('svg').forEach(icon => icon.classList.toggle('hidden'));
+                });
+            }
+            
+            // Ransomware Chart
+            const ransomwareCtx = document.getElementById('ransomwareChart');
+            if (ransomwareCtx) {
+                new Chart(ransomwareCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Victims of Ransomware (65%)', 'Not Victims (35%)'],
+                        datasets: [{
+                            label: 'Ransomware Impact on Manufacturers (2024)',
+                            data: [65, 35],
+                            backgroundColor: [
+                                'rgb(204, 0, 0)', // red-600
+                                'rgb(229, 231, 235)'  // neutral-200
+                            ],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                   font: { size: 10 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.raw + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gemini API Integration
+            const askGeminiButton = document.getElementById('askGeminiButton');
+            const geminiQuestionInput = document.getElementById('geminiQuestionInput');
+            const geminiAnswerOutput = document.getElementById('geminiAnswerOutput');
+            const askGeminiSpinner = document.getElementById('askGeminiSpinner');
+            const geminiError = document.getElementById('geminiError');
+
+            const generateScenarioButton = document.getElementById('generateScenarioButton');
+            const scenarioIndustryInput = document.getElementById('scenarioIndustryInput');
+            const scenarioOutput = document.getElementById('scenarioOutput');
+            const scenarioSpinner = document.getElementById('scenarioSpinner');
+            const scenarioError = document.getElementById('scenarioError');
+
+            async function callGeminiAPI(prompt, outputElement, spinnerElement, errorElement) {
+                outputElement.classList.add('hidden');
+                errorElement.classList.add('hidden');
+                spinnerElement.classList.remove('hidden');
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        outputElement.innerHTML = text.replace(/\n/g, '<br>'); // Format newlines for HTML
+                        outputElement.classList.remove('hidden');
+                    } else {
+                        errorElement.textContent = 'Error: Could not get a valid response from Gemini. Please try again.';
+                        errorElement.classList.remove('hidden');
+                        console.error('Unexpected Gemini API response structure:', result);
+                    }
+                } catch (e) {
+                    errorElement.textContent = 'Error: Failed to connect to Gemini API. ' + e.message;
+                    errorElement.classList.remove('hidden');
+                    console.error('Gemini API call failed:', e);
+                } finally {
+                    spinnerElement.classList.add('hidden');
+                }
+            }
+
+            if (askGeminiButton) {
+                askGeminiButton.addEventListener('click', () => {
+                    const question = geminiQuestionInput.value.trim();
+                    if (question) {
+                        const prompt = `Answer the following question about Industry 4.0 concisely and professionally: "${question}"`;
+                        callGeminiAPI(prompt, geminiAnswerOutput, askGeminiSpinner, geminiError);
+                    } else {
+                        geminiError.textContent = 'Please enter a question.';
+                        geminiError.classList.remove('hidden');
+                    }
+                });
+            }
+
+            if (generateScenarioButton) {
+                generateScenarioButton.addEventListener('click', () => {
+                    const industry = scenarioIndustryInput.value.trim();
+                    if (industry) {
+                        const prompt = `Generate a short, concise scenario (around 100-150 words) describing how Industry 4.0 principles and technologies (like IoT, AI, robotics, digital twins) would be applied in a "${industry}" smart factory. Focus on efficiency, automation, and data use.`;
+                        callGeminiAPI(prompt, scenarioOutput, scenarioSpinner, scenarioError);
+                    } else {
+                        scenarioError.textContent = 'Please enter an industry or factory type.';
+                        scenarioError.classList.remove('hidden');
+                    }
+                });
+            }
+        });
+
+        function toggleMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                 mobileMenuButton.click(); // Simulate click to close if open
+            }
+        }
+
+    </script>
+</body>
+</html>
